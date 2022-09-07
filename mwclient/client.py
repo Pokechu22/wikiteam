@@ -23,6 +23,7 @@ except ImportError:
 
 __version__ = '0.10.1'
 
+logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
 USER_AGENT = 'mwclient/{} ({})'.format(__version__,
@@ -139,16 +140,16 @@ class Site(object):
     def site_init(self):
 
         if self.initialized:
-            info = self.get('query', meta='userinfo', uiprop='groups|rights')
-            userinfo = info['query']['userinfo']
-            self.username = userinfo['name']
-            self.groups = userinfo.get('groups', [])
-            self.rights = userinfo.get('rights', [])
-            self.tokens = {}
+            #info = self.get('query', meta='userinfo', uiprop='groups|rights')
+            #userinfo = info['query']['userinfo']
+            #self.username = userinfo['name']
+            #self.groups = userinfo.get('groups', [])
+            #self.rights = userinfo.get('rights', [])
+            #self.tokens = {}
             return
 
-        meta = self.get('query', meta='siteinfo|userinfo',
-                        siprop='general|namespaces', uiprop='groups|rights',
+        meta = self.get('query', meta='siteinfo',
+                        siprop='general|namespaces',
                         retry_on_error=False)
 
         # Extract site info
@@ -162,13 +163,13 @@ class Site(object):
         self.version = self.version_tuple_from_generator(self.site['generator'])
 
         # Require MediaWiki version >= 1.16
-        self.require(1, 16)
+        #self.require(1, 16)
 
         # User info
-        userinfo = meta['query']['userinfo']
-        self.username = userinfo['name']
-        self.groups = userinfo.get('groups', [])
-        self.rights = userinfo.get('rights', [])
+        #userinfo = meta['query']['userinfo']
+        #self.username = userinfo['name']
+        #self.groups = userinfo.get('groups', [])
+        #self.rights = userinfo.get('rights', [])
         self.initialized = True
 
     @staticmethod
@@ -269,15 +270,6 @@ class Site(object):
 
         if action == 'query' and 'continue' not in kwargs:
             kwargs['continue'] = ''
-        if action == 'query':
-            if 'meta' in kwargs:
-                kwargs['meta'] += '|userinfo'
-            else:
-                kwargs['meta'] = 'userinfo'
-            if 'uiprop' in kwargs:
-                kwargs['uiprop'] += '|blockinfo|hasmsg'
-            else:
-                kwargs['uiprop'] = 'blockinfo|hasmsg'
 
         sleeper = self.sleepers.make()
 

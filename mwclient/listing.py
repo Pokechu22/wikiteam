@@ -169,7 +169,7 @@ class GeneratorList(List):
         del self.args[self.prefix + 'limit']
         self.generator = 'generator'
 
-        self.args['prop'] = 'info|imageinfo'
+        self.args['prop'] = 'info'
         self.args['inprop'] = 'protection'
 
         self.result_member = 'pages'
