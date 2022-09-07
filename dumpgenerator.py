@@ -406,7 +406,7 @@ def getImageNames(config={}, session=None):
 
     print 'Retrieving image filenames'
     images = []
-    if 'api' in config and config['api']:
+    if False and 'api' in config and config['api']:
         images = getImageNamesAPI(config=config, session=session)
     elif 'index' in config and config['index']:
         images = getImageNamesScraper(config=config, session=session)
@@ -1202,7 +1202,12 @@ def saveImageNames(config={}, images=[], session=None):
 def curateImageURL(config={}, url=''):
     """ Returns an absolute URL for an image, adding the domain if missing """
 
-    if 'index' in config and config['index']:
+    if True:
+        # Note: diff spelling: rodovid.org vs rodvoid.org
+        domainalone = 'https://rodvoid.org'
+        if url[0:len(u'/images')] == u'/images':
+            url = url[len(u'/images'):]
+    elif 'index' in config and config['index']:
         # remove from :// (http or https) until the first / after domain
         domainalone = config['index'].split(
             '://')[0] + '://' + config['index'].split('://')[1].split('/')[0]
@@ -1514,6 +1519,8 @@ def generateImageDump(config={}, other={}, images=[], start='', session=None):
         imagefile.write(r.content)
         imagefile.close()
         # saving description if any
+        # this is completely broken, just skip it. the same info should be in the xml dump
+        """
         try:
             title = u'Image:%s' % (filename)
             if config['xmlrevisions'] and config['api'] and config['api'].endswith("api.php"):
@@ -1544,6 +1551,7 @@ def generateImageDump(config={}, other={}, images=[], start='', session=None):
         f.write(xmlfiledesc.encode('utf-8'))
         f.close()
         delay(config=config, session=session)
+        """
         c += 1
         if c % 10 == 0:
             print '    Downloaded %d images' % (c)
