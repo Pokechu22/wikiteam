@@ -419,6 +419,7 @@ def getImageNames(config={}, session=None):
 
 
 def getXMLHeader(config={}, session=None):
+    return "<mediawiki><!-- no header available -->\n", config
     """ Retrieve a random page to extract XML headers (namespace info, etc) """
     # get the header of a random page, to attach it in the complete XML backup
     # similar to: <mediawiki xmlns="http://www.mediawiki.org/xml/export-0.3/"
@@ -806,6 +807,7 @@ def getXMLRevisions(config={}, session=None, allpages=False, start=None):
         namespaces, namespacenames = getNamespacesAPI(config=config, session=session)
 
     try:
+        raise KeyError()
         for namespace in namespaces:
             print("Trying to export all revisions from namespace %s" % namespace)
             # arvgeneratexml exists but was deprecated in 1.26 (while arv is from 1.27?!)
@@ -976,8 +978,8 @@ def getXMLRevisions(config={}, session=None, allpages=False, start=None):
                     'action': 'query',
                     'titles': '|'.join(titlelist),
                     'prop': 'revisions',
-                    #'rvlimit': 50,
-                    'rvprop': 'ids|timestamp|user|userid|size|sha1|contentmodel|comment|content',
+                    'rvlimit': 50,
+                    'rvprop': 'timestamp|user|comment|content',
                 }
                 try:
                     prequest = site.api(http_method=config['http_method'], **pparams)
@@ -995,6 +997,7 @@ def getXMLRevisions(config={}, session=None, allpages=False, start=None):
 
                 # Be ready to iterate if there is continuation.
                 while True:
+                    delay(config=config, session=session)
                     # Get the revision data returned by the API: prequest is the initial request
                     # or the new one after continuation at the bottom of this while loop.
                     # The array is called "pages" even if there's only one.
@@ -1058,7 +1061,7 @@ def makeXmlFromPage(page):
                 E.ns(to_unicode(page['ns'])),
                 E.id(to_unicode(page['pageid'])),
         )
-        for rev in page['revisions']:
+        for rev in page['revisions'].itervalues():
             # Older releases like MediaWiki 1.16 do not return all fields.
             if 'userid' in rev:
                 userid = rev['userid']
