@@ -23,7 +23,7 @@ except ImportError:
 
 __version__ = '0.10.1'
 
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
 USER_AGENT = 'mwclient/{} ({})'.format(__version__,
