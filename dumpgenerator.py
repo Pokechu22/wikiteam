@@ -731,7 +731,7 @@ def generateXMLDump(config={}, titles=[], start=None, session=None):
 
     if config['xmlrevisions']:
         if start:
-            print("WARNING: will try to start the download from title: {}".format(start))
+            print("WARNING: will try to start the download from title: %s" % start)
             xmlfile = open('%s/%s' % (config['path'], xmlfilename), 'a')
         else:
             print 'Retrieving the XML for every page from the beginning'
@@ -2199,7 +2199,7 @@ def resumePreviousDump(config={}, other={}):
 
                 xmltitle = re.search(r'<title>([^<]+)</title>', l)
                 if xmltitle:
-                    lastxmltitle = undoHTMLEntities(text=xmltitle.group(1))
+                    lastxmltitle = undoHTMLEntities(text=xmltitle.group(1)).decode('utf-8')
                     break
         except:
             pass  # probably file does not exists
