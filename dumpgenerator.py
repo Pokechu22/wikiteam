@@ -919,7 +919,7 @@ def getXMLRevisions(config={}, session=None, allpages=False, start=None):
                         # End of continuation. We are done with this namespace.
                         break
                     
-    except (KeyError, mwclient.errors.InvalidResponse) as e:
+    except (KeyError, PageMissingError, mwclient.errors.InvalidResponse) as e:
         print(e)
         # TODO: check whether the KeyError was really for a missing arv API
         print "Warning. Could not use allrevisions. Wiki too old?"
