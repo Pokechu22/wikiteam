@@ -16,6 +16,8 @@ import mwclient.listing as listing
 from mwclient.sleep import Sleepers
 from mwclient.util import parse_timestamp, read_in_chunks
 
+import time
+
 try:
     import gzip
 except ImportError:
@@ -367,6 +369,7 @@ class Site(object):
         Returns:
             The raw text response.
         """
+        time.sleep(1)
         headers = {}
         if self.compress and gzip:
             headers['Accept-Encoding'] = 'gzip'
