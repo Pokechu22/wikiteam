@@ -1509,6 +1509,8 @@ def generateImageDump(config={}, other={}, images=[], start='', session=None):
         imagefile.write(r.content)
         imagefile.close()
         # saving description if any
+        # this is completely broken, just skip it. the same info should be in the xml dump
+        """
         try:
             title = u'Image:%s' % (filename)
             if config['xmlrevisions'] and config['api'] and config['api'].endswith("api.php"):
@@ -1539,6 +1541,7 @@ def generateImageDump(config={}, other={}, images=[], start='', session=None):
         f.write(xmlfiledesc.encode('utf-8'))
         f.close()
         delay(config=config, session=session)
+        """
         c += 1
         if c % 10 == 0:
             print '    Downloaded %d images' % (c)
