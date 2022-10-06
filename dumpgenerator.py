@@ -419,6 +419,7 @@ def getImageNames(config={}, session=None):
 
 
 def getXMLHeader(config={}, session=None):
+    return "<mediawiki><!-- no header available -->\n", config
     """ Retrieve a random page to extract XML headers (namespace info, etc) """
     # get the header of a random page, to attach it in the complete XML backup
     # similar to: <mediawiki xmlns="http://www.mediawiki.org/xml/export-0.3/"
@@ -806,6 +807,7 @@ def getXMLRevisions(config={}, session=None, allpages=False, start=None):
         namespaces, namespacenames = getNamespacesAPI(config=config, session=session)
 
     try:
+        raise KeyError()
         for namespace in namespaces:
             print("Trying to export all revisions from namespace %s" % namespace)
             # arvgeneratexml exists but was deprecated in 1.26 (while arv is from 1.27?!)
@@ -976,7 +978,7 @@ def getXMLRevisions(config={}, session=None, allpages=False, start=None):
                     'action': 'query',
                     'titles': '|'.join(titlelist),
                     'prop': 'revisions',
-                    #'rvlimit': 50,
+                    'rvlimit': 50,
                     'rvprop': 'ids|timestamp|user|userid|size|sha1|contentmodel|comment|content',
                 }
                 try:
