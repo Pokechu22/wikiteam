@@ -1684,6 +1684,11 @@ def getParameters(params=[]):
         '--pass',
         dest='password',
         help='Password if authentication is required.')
+    parser.add_argument(
+        '--method',
+        dest='http_method',
+        default='POST',
+        help='HTTP method (POST (default) or GET).')
 
     # URL params
     groupWikiOrAPIOrIndex = parser.add_argument_group()
@@ -1907,7 +1912,7 @@ def getParameters(params=[]):
         'date': datetime.datetime.now().strftime('%Y%m%d'),
         'api': api,
         'failfast': args.failfast,
-        'http_method': "POST",
+        'http_method': args.http_method,
         'index': index,
         'images': args.images,
         'logs': False,
