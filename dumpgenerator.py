@@ -983,7 +983,20 @@ def getXMLRevisions(config={}, session=None, allpages=False, start=None):
                     'rvprop': 'ids|timestamp|user|userid|size|sha1|contentmodel|comment|content',
                 }
                 try:
-                    prequest = site.api(http_method=config['http_method'], **pparams)
+                    attempt = 1
+                    wait = 0
+                    while attempt <= config['retries']:
+                        try:
+                            prequest = site.api(http_method=config['http_method'], **pparams)
+                            break
+                        except requests.exceptions.ReadTimeout:
+                            print '    In attempt %d, "%s" timed out. Waiting %d seconds and reloading...' %(attempt, ("; ".join(titlelist)), wait)
+                            attempt = attempt + 1
+                            wait = wait + 20
+                            time.sleep(wait)
+                    else:
+                        logerror(config=config, text=u'Timed out when exporting page: %s' % ("; ".join(titlelist)))
+                        continue
                 except requests.exceptions.HTTPError as e:
                     if e.response.status_code == 405 and config['http_method'] == "POST":
                         print("POST request to the API failed, retrying with GET")
