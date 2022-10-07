@@ -1500,7 +1500,14 @@ def generateImageDump(config={}, other={}, images=[], start='', session=None):
         filename3 = u'%s/%s' % (imagepath, filename2)
         imagefile = open(filename3, 'wb')
 
-        r = session.head(url=url, allow_redirects=True)
+        try:
+            r = session.head(url=url, allow_redirects=True)
+        except requests.exceptions.RetryError:
+            logerror(
+                config=config,
+                text=u'Failed to save image "%s" from %s' % (filename, url)
+            )
+            continue
         original_url_redirected = len(r.history) > 0
 
         if original_url_redirected:
