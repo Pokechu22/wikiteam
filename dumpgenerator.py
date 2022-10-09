@@ -835,8 +835,8 @@ def getXMLRevisions(config={}, session=None, allpages=False, start=None):
                         # TODO: reuse the retry logic of the checkAPI phase? Or force mwclient
                         # to use the retry adapter we use for our own requests session?
                         print("ERROR: {}".format(str(err)))
-                        print("Sleeping for 20 seconds")
-                        time.sleep(20)
+                        print("Sleeping for 1 second")
+                        time.sleep(1)
                         continue
 
                     for page in arvrequest['query']['allrevisions']:
