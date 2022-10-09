@@ -829,7 +829,7 @@ def getXMLRevisions(config={}, session=None, allpages=False, start=None):
                             print("POST request to the API failed, retrying with GET")
                             config['http_method'] = "GET"
                             continue
-                    except requests.exceptions.ReadTimeout as err:
+                    except (requests.exceptions.ReadTimeout, mwclient.errors.InvalidResponse) as err:
                         # Hopefully temporary, just wait a bit and continue with the same request.
                         # No point putting a limit to retries, we'd need to abort everything.
                         # TODO: reuse the retry logic of the checkAPI phase? Or force mwclient
