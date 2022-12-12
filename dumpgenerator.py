@@ -27,6 +27,9 @@ import cookielib
 import cPickle
 import datetime
 import sys
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 try:
     import argparse
 except ImportError:
@@ -983,7 +986,7 @@ def getXMLRevisions(config={}, session=None, allpages=False, start=None):
                     'action': 'query',
                     'titles': '|'.join(titlelist),
                     'prop': 'revisions',
-                    #'rvlimit': 50,
+                    'rvlimit': 50,
                     'rvprop': 'ids|timestamp|user|userid|size|sha1|contentmodel|comment|content',
                 }
                 try:
@@ -992,7 +995,7 @@ def getXMLRevisions(config={}, session=None, allpages=False, start=None):
                     if e.response.status_code == 405 and config['http_method'] == "POST":
                         print("POST request to the API failed, retrying with GET")
                         config['http_method'] = "GET"
-                        exportrequest = site.api(http_method=config['http_method'], **exportparams)
+                        prequest = site.api(http_method=config['http_method'], **exportparams)
                 except mwclient.errors.InvalidResponse:
                     logerror(
                                 config=config,
@@ -1028,8 +1031,8 @@ def getXMLRevisions(config={}, session=None, allpages=False, start=None):
                     # Get next batch of revisions if there's more.
                     if 'continue' in prequest.keys():
                         print("Getting more revisions for the page")
-                        for key, value in prequest['continue']:
-                            params[key] = value
+                        for key, value in prequest['continue'].items():
+                            pparams[key] = value
                     elif 'query-continue' in prequest.keys():
                         rvstartid = prequest['query-continue']['revisions']['rvstartid']
                         pparams['rvstartid'] = rvstartid
@@ -1914,7 +1917,7 @@ def getParameters(params=[]):
         'date': datetime.datetime.now().strftime('%Y%m%d'),
         'api': api,
         'failfast': args.failfast,
-        'http_method': "POST",
+        'http_method': "GET",
         'index': index,
         'images': args.images,
         'logs': False,
