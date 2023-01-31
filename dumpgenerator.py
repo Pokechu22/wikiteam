@@ -65,6 +65,18 @@ sys.stdout = UTF8Writer(sys.stdout)
 
 __VERSION__ = '0.4.0-alpha'  # major, minor, micro: semver.org
 
+def is_json_start(s):
+    # ignore whitespace; assume t -> true, f -> false, n -> null; leading periods not allowed
+    return s[0] in '{[tfn-0123456789'
+
+orig_json_loads = json.loads
+def strip_php_warnings_json_loads(text, **kwargs):
+    while '\n' in text and not is_json_start(text):
+        idx = text.find('\n')
+        print('Skipping line: ' + text[:idx])
+        text = text[idx + 1:]
+    return orig_json_loads(text, **kwargs)
+
 class PageMissingError(Exception):
     def __init__(self, title, xml):
         self.title = title
@@ -1691,6 +1703,11 @@ def getParameters(params=[]):
         '--pass',
         dest='password',
         help='Password if authentication is required.')
+    parser.add_argument(
+        '--strip-php-warnings',
+        dest='strip_php_warnings',
+        action='store_true',
+        help='Remove PHP warnings that produce malformed JSON.')
 
     # URL params
     groupWikiOrAPIOrIndex = parser.add_argument_group()
@@ -1788,6 +1805,9 @@ def getParameters(params=[]):
     session.headers.update({'User-Agent': getUserAgent()})
     if args.user and args.password:
         session.auth = (args.user, args.password)
+
+    if args.strip_php_warnings:
+        json.loads = strip_php_warnings_json_loads
 
     # check URLs
     for url in [args.api, args.index, args.wiki]:
