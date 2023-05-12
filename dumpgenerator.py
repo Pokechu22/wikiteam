@@ -401,7 +401,7 @@ def getPageTitles(config={}, session=None):
     print '%d page titles loaded' % (c)
     return titlesfilename
 
-def getImageNames(config={}, session=None):
+def getImageNames(config={}, other={}, session=None):
     """ Get list of image names """
 
     print 'Retrieving image filenames'
@@ -409,7 +409,7 @@ def getImageNames(config={}, session=None):
     if 'api' in config and config['api']:
         images = getImageNamesAPI(config=config, session=session)
     elif 'index' in config and config['index']:
-        images = getImageNamesScraper(config=config, session=session)
+        images = getImageNamesScraper(config=config, other=other, session=session)
 
     # images = list(set(images)) # it is a list of lists
     images.sort()
@@ -1229,7 +1229,7 @@ def curateImageURL(config={}, url=''):
     return url
 
 
-def getImageNamesScraper(config={}, session=None):
+def getImageNamesScraper(config={}, other={}, session=None):
     """ Retrieve file list: filename, url, uploader """
 
     # (?<! http://docs.python.org/library/re.html
@@ -1239,6 +1239,8 @@ def getImageNamesScraper(config={}, session=None):
     offset = '29990101000000'  # january 1, 2999
     limit = 5000
     retries = config['retries']
+    counter = 0
+    seen_filenames = set()
     while offset:
         # 5000 overload some servers, but it is needed for sites like this with
         # no next links
@@ -1324,8 +1326,23 @@ def getImageNamesScraper(config={}, session=None):
             desc_url = curateImageURL(config=config, url=desc_url)
             date = i.group('date')
             size = i.group('size')
-            images.append([filename, desc_url, url, uploader, date, size])
+
+            filename2 = filename
+            if len(filename2) > other['filenamelimit']:
+                # split last . (extension) and then merge
+                filename2 = truncateFilename(other=other, filename=filename2)
+                print(u'Filename for %s is too long, truncating. Now it is: %s' % (filename, filename2))
+            if filename2.lower() in seen_filenames:
+                filename2 = truncateFilename(other=other, filename=filename2)
+                print(u'Filename for %s was already used, renaming to %s' % (filename, filename2))
+            seen_filenames.add(filename2.lower())
+
+            images.append([filename, filename2, desc_url, url, uploader, date, size])
             # print filename, url
+
+        counter += 1
+        if counter % 10 == 0:
+            print('Offset: %s, found %d images so far' % (offset, len(images)))
 
         if re.search(r_next, raw):
             new_offset = re.findall(r_next, raw)[0]
@@ -1484,7 +1501,7 @@ def generateImageDump(config={}, other={}, images=[], start='', session=None):
     lock = True
     if not start:
         lock = False
-    for filename, desc_url, url, uploader, date, size in images:
+    for filename, filename2, desc_url, url, uploader, date, size in images:
         if filename == start:  # start downloading from start (included)
             lock = False
         if lock:
@@ -1494,11 +1511,6 @@ def generateImageDump(config={}, other={}, images=[], start='', session=None):
         # saving file
         # truncate filename if length > 100 (100 + 32 (md5) = 132 < 143 (crash
         # limit). Later .desc is added to filename, so better 100 as max)
-        filename2 = urllib.unquote(filename)
-        if len(filename2) > other['filenamelimit']:
-            # split last . (extension) and then merge
-            filename2 = truncateFilename(other=other, filename=filename2)
-            print 'Filename is too long, truncating. Now it is:', filename2
         filename3 = u'%s/%s' % (imagepath, filename2)
         imagefile = open(filename3, 'wb')
 
@@ -2144,7 +2156,7 @@ def createNewDump(config={}, other={}):
     images = []
     print 'Trying generating a new dump into a new directory...'
     if config['images']:
-        images += getImageNames(config=config, session=other['session'])
+        images += getImageNames(config=config, other=other, session=other['session'])
         saveImageNames(config=config, images=images, session=other['session'])
         generateImageDump(
             config=config,
@@ -2192,12 +2204,12 @@ def resumePreviousDump(config={}, other={}):
             print 'Image list is incomplete. Reloading...'
             # do not resume, reload, to avoid inconsistencies, deleted images or
             # so
-            images = getImageNames(config=config, session=other['session'])
+            images = getImageNames(config=config, other=other, session=other['session'])
             saveImageNames(config=config, images=images)
         # checking images directory
         listdir = []
         try:
-            listdir = os.listdir('%s/images' % (config['path']))
+            listdir = os.listdir(u'%s/images' % (config['path']))
         except:
             pass  # probably directory does not exist
         listdir.sort()
@@ -2205,13 +2217,10 @@ def resumePreviousDump(config={}, other={}):
         lastfilename = ''
         lastfilename2 = ''
         c = 0
-        for filename, desc_url, url, uploader, date, size in images:
+        for filename, filename2, desc_url, url, uploader, date, size in images:
             lastfilename2 = lastfilename
             # return always the complete filename, not the truncated
             lastfilename = filename
-            filename2 = filename
-            if len(filename2) > other['filenamelimit']:
-                filename2 = truncateFilename(other=other, filename=filename2)
             if filename2 not in listdir:
                 complete = False
                 break
