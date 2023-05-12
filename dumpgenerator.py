@@ -2132,14 +2132,6 @@ def checkXMLIntegrity(config={}, titles=[], session=None):
 def createNewDump(config={}, other={}):
     images = []
     print 'Trying generating a new dump into a new directory...'
-    if config['xml']:
-        getPageTitles(config=config, session=other['session'])
-        titles=readTitles(config)
-        generateXMLDump(config=config, titles=titles, session=other['session'])
-        checkXMLIntegrity(
-            config=config,
-            titles=titles,
-            session=other['session'])
     if config['images']:
         images += getImageNames(config=config, session=other['session'])
         saveImageNames(config=config, images=images, session=other['session'])
@@ -2148,6 +2140,14 @@ def createNewDump(config={}, other={}):
             other=other,
             images=images,
             session=other['session'])
+    if config['xml']:
+        getPageTitles(config=config, session=other['session'])
+        titles=readTitles(config)
+        generateXMLDump(config=config, titles=titles, session=other['session'])
+        checkXMLIntegrity(
+            config=config,
+            titles=titles,
+            session=other['session'])
     if config['logs']:
         saveLogs(config=config, session=other['session'])
 
@@ -2155,6 +2155,70 @@ def createNewDump(config={}, other={}):
 def resumePreviousDump(config={}, other={}):
     images = []
     print 'Resuming previous dump process...'
+    if config['images']:
+        # load images
+        lastimage = ''
+        try:
+            f = open(
+                '%s/%s-%s-images.txt' %
+                (config['path'],
+                 domain2prefix(
+                    config=config),
+                    config['date']),
+                'r')
+            raw = unicode(f.read(), 'utf-8').strip()
+            lines = raw.split('\n')
+            for l in lines:
+                if re.search(r'\t', l):
+                    images.append(l.split('\t'))
+            lastimage = lines[-1]
+            f.close()
+        except:
+            pass  # probably file does not exists
+        if lastimage == u'--END--':
+            print 'Image list was completed in the previous session'
+        else:
+            print 'Image list is incomplete. Reloading...'
+            # do not resume, reload, to avoid inconsistencies, deleted images or
+            # so
+            images = getImageNames(config=config, session=other['session'])
+            saveImageNames(config=config, images=images)
+        # checking images directory
+        listdir = []
+        try:
+            listdir = os.listdir('%s/images' % (config['path']))
+        except:
+            pass  # probably directory does not exist
+        listdir.sort()
+        complete = True
+        lastfilename = ''
+        lastfilename2 = ''
+        c = 0
+        for filename, url, uploader in images:
+            lastfilename2 = lastfilename
+            # return always the complete filename, not the truncated
+            lastfilename = filename
+            filename2 = filename
+            if len(filename2) > other['filenamelimit']:
+                filename2 = truncateFilename(other=other, filename=filename2)
+            if filename2 not in listdir:
+                complete = False
+                break
+            c += 1
+        print '%d images were found in the directory from a previous session' % (c)
+        if complete:
+            # image dump is complete
+            print 'Image dump was completed in the previous session'
+        else:
+            # we resume from previous image, which may be corrupted (or missing
+            # .desc)  by the previous session ctrl-c or abort
+            generateImageDump(
+                config=config,
+                other=other,
+                images=images,
+                start=lastfilename2,
+                session=other['session'])
+
     if config['xml']:
         titles=readTitles(config)
         try:
@@ -2220,70 +2284,6 @@ def resumePreviousDump(config={}, other={}):
             titles = readTitles(config)
             generateXMLDump(
                 config=config, titles=titles, session=other['session'])
-
-    if config['images']:
-        # load images
-        lastimage = ''
-        try:
-            f = open(
-                '%s/%s-%s-images.txt' %
-                (config['path'],
-                 domain2prefix(
-                    config=config),
-                    config['date']),
-                'r')
-            raw = unicode(f.read(), 'utf-8').strip()
-            lines = raw.split('\n')
-            for l in lines:
-                if re.search(r'\t', l):
-                    images.append(l.split('\t'))
-            lastimage = lines[-1]
-            f.close()
-        except:
-            pass  # probably file does not exists
-        if lastimage == u'--END--':
-            print 'Image list was completed in the previous session'
-        else:
-            print 'Image list is incomplete. Reloading...'
-            # do not resume, reload, to avoid inconsistencies, deleted images or
-            # so
-            images = getImageNames(config=config, session=other['session'])
-            saveImageNames(config=config, images=images)
-        # checking images directory
-        listdir = []
-        try:
-            listdir = os.listdir('%s/images' % (config['path']))
-        except:
-            pass  # probably directory does not exist
-        listdir.sort()
-        complete = True
-        lastfilename = ''
-        lastfilename2 = ''
-        c = 0
-        for filename, url, uploader in images:
-            lastfilename2 = lastfilename
-            # return always the complete filename, not the truncated
-            lastfilename = filename
-            filename2 = filename
-            if len(filename2) > other['filenamelimit']:
-                filename2 = truncateFilename(other=other, filename=filename2)
-            if filename2 not in listdir:
-                complete = False
-                break
-            c += 1
-        print '%d images were found in the directory from a previous session' % (c)
-        if complete:
-            # image dump is complete
-            print 'Image dump was completed in the previous session'
-        else:
-            # we resume from previous image, which may be corrupted (or missing
-            # .desc)  by the previous session ctrl-c or abort
-            generateImageDump(
-                config=config,
-                other=other,
-                images=images,
-                start=lastfilename2,
-                session=other['session'])
 
     if config['logs']:
         # fix
