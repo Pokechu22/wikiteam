@@ -1184,16 +1184,7 @@ def saveImageNames(config={}, images=[], session=None):
         domain2prefix(config=config), config['date'])
     imagesfile = open('%s/%s' % (config['path'], imagesfilename), 'w')
     imagesfile.write(
-        ('\n'.join(
-            [
-                '%s\t%s\t%s' %
-                (filename,
-                 url,
-                 uploader) for filename,
-                url,
-                uploader in images]
-            ).encode('utf-8')
-         )
+        '\n'.join(['\t'.join(image) for image in images]).encode('utf-8')
     )
     imagesfile.write('\n--END--')
     imagesfile.close()
@@ -1301,8 +1292,10 @@ def getImageNamesScraper(config={}, session=None):
 
         # Special:Newimages
         r_newimages = (r'(<div class="gallerybox"><div class="thumb" style="[^">]+"><a href[^>]+title="[^:>]+:(?P<filename>[^>]+)"><img src="(?P<url>[^">]+)"[^>]+? /></a></div><div class="gallerytext">\n'
-                     r'<a[^>]+>[^<]+</a><br />\n'
-                     r'<a[^>]+>(?P<uploader>[^<]+)</a><br />)')
+                     r'<a href="(?P<desc_url>[^">]+/[^">/]+)"[^>]+>[^<]+</a><br />\n'
+                     r'<a[^>]+>(?P<uploader>[^<]+)</a><br />)\n'
+                     r'<i>(?P<date>[^<]+)</i><br />\n'
+                     r'(?P<size>[^<]+)<br />')
 
         # Select the regexp that returns more results
         # regexps = [r_images1, r_images2, r_images3, r_images4, r_images5]
@@ -1327,7 +1320,11 @@ def getImageNamesScraper(config={}, session=None):
             uploader = re.sub('_', ' ', i.group('uploader'))
             uploader = undoHTMLEntities(text=uploader)
             uploader = urllib.unquote(uploader)
-            images.append([filename, url, uploader])
+            desc_url = i.group('desc_url')
+            desc_url = curateImageURL(config=config, url=desc_url)
+            date = i.group('date')
+            size = i.group('size')
+            images.append([filename, desc_url, url, uploader, date, size])
             # print filename, url
 
         if re.search(r_next, raw):
@@ -1487,7 +1484,7 @@ def generateImageDump(config={}, other={}, images=[], start='', session=None):
     lock = True
     if not start:
         lock = False
-    for filename, url, uploader in images:
+    for filename, desc_url, url, uploader, date, size in images:
         if filename == start:  # start downloading from start (included)
             lock = False
         if lock:
@@ -2208,7 +2205,7 @@ def resumePreviousDump(config={}, other={}):
         lastfilename = ''
         lastfilename2 = ''
         c = 0
-        for filename, url, uploader in images:
+        for filename, desc_url, url, uploader, date, size in images:
             lastfilename2 = lastfilename
             # return always the complete filename, not the truncated
             lastfilename = filename
