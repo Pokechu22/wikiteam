@@ -1228,6 +1228,13 @@ def curateImageURL(config={}, url=''):
     # urls with odd chars
     url = re.sub(' ', '_', url)
 
+    # We want http://www.miniatures-workshop.com/lostminiswiki/images/8/8b/IWM-67-102.jpg from:
+    # http://www.miniatures-workshop.com/lostminiswiki/images/thumb/8/8b/IWM-67-102.jpg/88px-IWM-67-102.jpg
+    r_thumbnail = r'^(.+?/images/)thumb/(./../)([^/]+)/\d+px-\3$'
+    match_thumbnail = re.match(r_thumbnail, url)
+    if match_thumbnail != None:
+        url = match_thumbnail.group(1) + match_thumbnail.group(2) + match_thumbnail.group(3)
+
     return url
 
 
@@ -1235,7 +1242,8 @@ def getImageNamesScraper(config={}, session=None):
     """ Retrieve file list: filename, url, uploader """
 
     # (?<! http://docs.python.org/library/re.html
-    r_next = r'(?<!&amp;dir=prev)&amp;offset=(?P<offset>\d+)&amp;'
+    # r_next = r'(?<!&amp;dir=prev)&amp;offset=(?P<offset>\d+)&amp;'
+    r_next = r'(?<!&amp;dir=prev)&amp;until=(?P<offset>\d+)&amp;'
     images = []
     offset = '29990101000000'  # january 1, 2999
     limit = 5000
@@ -1247,9 +1255,9 @@ def getImageNamesScraper(config={}, session=None):
         r = session.post(
             url=config['index'],
             params={
-                'title': 'Special:Imagelist',
-                'limit': limit,
-                'offset': offset},
+                'title': 'Special:Newimages',
+                'hidebots': 0,
+                'until': offset},
             timeout=30)
         raw = r.text
         delay(config=config, session=session)
@@ -1291,8 +1299,14 @@ def getImageNamesScraper(config={}, session=None):
             '<td class="TablePager_col_img_size">[^<]*?</td>\s*'
             '<td class="TablePager_col_img_user_text">\s*(<a href="[^>]*?" title="[^>]*?">)?(?P<uploader>[^<]+?)(</a>)?\s*</td>')
 
+        # Special:Newimages
+        r_newimages = (r'(<div class="gallerybox"><div class="thumb" style="[^">]+"><a href[^>]+title="[^:>]+:(?P<filename>[^>]+)"><img src="(?P<url>[^">]+)"[^>]+? /></a></div><div class="gallerytext">\n'
+                     r'<a[^>]+>[^<]+</a><br />\n'
+                     r'<a[^>]+>(?P<uploader>[^<]+)</a><br />)')
+
         # Select the regexp that returns more results
-        regexps = [r_images1, r_images2, r_images3, r_images4, r_images5]
+        # regexps = [r_images1, r_images2, r_images3, r_images4, r_images5]
+        regexps = [r_newimages]
         count = 0
         i = 0
         regexp_best = 0
