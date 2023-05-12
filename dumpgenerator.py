@@ -1491,6 +1491,8 @@ def generateImageDump(config={}, other={}, images=[], start='', session=None):
         filename3 = u'%s/%s' % (imagepath, filename2)
         imagefile = open(filename3, 'wb')
 
+        original_url_redirected = False
+        """
         r = session.head(url=url, allow_redirects=True)
         original_url_redirected = len(r.history) > 0
 
@@ -1498,6 +1500,7 @@ def generateImageDump(config={}, other={}, images=[], start='', session=None):
             #print 'Site is redirecting us to: ', r.url
             original_url = url
             url = r.url
+        """
 
         r = session.get(url=url, allow_redirects=False)
 
@@ -1515,6 +1518,7 @@ def generateImageDump(config={}, other={}, images=[], start='', session=None):
 
         imagefile.write(r.content)
         imagefile.close()
+        """
         # saving description if any
         title = u'Image:%s' % (filename)
         try:
@@ -1546,6 +1550,7 @@ def generateImageDump(config={}, other={}, images=[], start='', session=None):
         f.write(xmlfiledesc.encode('utf-8'))
         f.close()
         delay(config=config, session=session)
+        """
         c += 1
         if c % 10 == 0:
             print '    Downloaded %d images' % (c)
