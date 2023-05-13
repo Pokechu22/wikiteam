@@ -150,6 +150,10 @@ def handleStatusCode(response):
         print response.url
         sys.exit(1)
 
+    elif statuscode == 500:
+        print "Server error, retrying..."
+        return
+
     elif statuscode == 429 or (statuscode >= 500 and statuscode < 600):
         print "Server error, max retries exceeded."
         print "Please resume the dump later."
